@@ -14,3 +14,17 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     next();
   });
 };
+
+export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
+  const user = (req as any).user;
+
+  if (!user) {
+    return res.status(401).json({ message: "Usuario no autenticado" });
+  }
+
+  if (user.role !== "admin") {
+    return res.status(403).json({ message: "Acceso denegado: solo administradores" });
+  }
+
+  next();
+};
