@@ -18,7 +18,7 @@ export class Purchase {
 
   @ManyToOne(() => Statistic, (statistic) => statistic.purchases, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "statisticId" })
-  statistic!: Statistic;
+  statistic!: Statistic | null;
 
   @Column({ type: "varchar", default: "purchase" })
   actionType!: string;
