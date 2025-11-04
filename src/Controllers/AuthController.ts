@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../Config/Data-source";
 import { User } from "../Entities/User";
 import * as bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { generateToken } from "../Utils/Jwt"; 
 
 const userRepo = AppDataSource.getRepository(User);
 
@@ -47,11 +47,8 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
-    );
+   const token = generateToken({ id: user.id, role: user.role });
+
 
     res.json({
       message: "Inicio de sesión exitoso",
