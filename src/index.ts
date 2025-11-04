@@ -5,12 +5,14 @@ import authRoutes from "./Routes/AuthRoute";
 import dotenv from "dotenv";
 import { User } from "./Entities/User";
 import  bcrypt from "bcryptjs";
+import purchaseRoutes from "./Routes/PurchaseRoute"
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/purchases", purchaseRoutes);
 
 AppDataSource.initialize()
   .then(async () => {
