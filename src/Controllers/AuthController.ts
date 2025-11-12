@@ -8,7 +8,7 @@ const userRepo = AppDataSource.getRepository(User);
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -19,15 +19,30 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
 
-    const user = userRepo.create({ name, email, password, role });
-    await userRepo.save(user);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    res.status(201).json({ message: "Usuario registrado correctamente" });
+    const userCount = await userRepo.count();
+    const role = userCount === 0 ? "admin" : "user";
+
+    const newUser = userRepo.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+    });
+
+    await userRepo.save(newUser);
+
+    res.status(201).json({
+      message: `Usuario registrado correctamente como ${role}`,
+      user: { id: newUser.id, name: newUser.name, email: newUser.email, role },
+    });
   } catch (error) {
     console.error(" Error en el registro:", error);
     res.status(500).json({ message: "Error en el registro" });
   }
 };
+
 
 export const login = async (req: Request, res: Response) => {
   try {
