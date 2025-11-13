@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../Config/Data-source";
 import { User } from "../Entities/User";
-import * as bcrypt from "bcryptjs";
-import { generateToken } from "../Utils/Jwt"; 
+import bcrypt from "bcryptjs";
+import { generateToken } from "../Utils/Jwt";
 
 const userRepo = AppDataSource.getRepository(User);
 
@@ -19,16 +19,13 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const userCount = await userRepo.count();
     const role = userCount === 0 ? "admin" : "user";
 
     const newUser = userRepo.create({
       name,
       email,
-      password: hashedPassword,
-      role,
+      password,
     });
 
     await userRepo.save(newUser);
@@ -38,11 +35,9 @@ export const register = async (req: Request, res: Response) => {
       user: { id: newUser.id, name: newUser.name, email: newUser.email, role },
     });
   } catch (error) {
-    console.error(" Error en el registro:", error);
     res.status(500).json({ message: "Error en el registro" });
   }
 };
-
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -52,18 +47,20 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Email y contraseña son obligatorios" });
     }
 
-    const user = await userRepo.findOneBy({ email });
+    const user = await userRepo.findOne({
+        where: { email, active: true }
+      });
+
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    let validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
 
-   const token = generateToken({ id: user.id, role: user.role });
-
+    const token = generateToken({ id: user.id, role: user.role });
 
     res.json({
       message: "Inicio de sesión exitoso",
@@ -76,7 +73,6 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error(" Error en el login:", error);
     res.status(500).json({ message: "Error en el login" });
   }
 };
