@@ -7,7 +7,8 @@ import dotenv from "dotenv";
 import { User } from "./Entities/User";
 import  bcrypt from "bcryptjs";
 import purchaseRoutes from "./Routes/PurchaseRoute";
-import productRoutes from "./Routes/ProductRoute";;
+import productRoutes from "./Routes/ProductRoute";
+import statisticRoutes from "./Routes/StatisticRoute";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/purchases", purchaseRoutes);
 app.use("/products", productRoutes);
+app.use("/statistic", statisticRoutes);
 
 AppDataSource.initialize()
   .then(async () => {
