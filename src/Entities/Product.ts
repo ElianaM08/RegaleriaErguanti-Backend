@@ -18,8 +18,8 @@ export class Product {
   @Column()
   stock!: number;
 
-  @Column({ nullable: true })
-  imageUrl!: string;
+  @Column({  type: "nvarchar", nullable: true })
+  imageUrl!: string | null;
 
   @CreateDateColumn()
   createdAt!: Date;

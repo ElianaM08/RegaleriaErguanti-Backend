@@ -1,15 +1,29 @@
 import { Request, Response } from "express";
 import { AppDataSource } from "../Config/Data-source";
 import { Product } from "../Entities/Product";
+import cloudinary from "../Config/Cloudinary";
+import fs from "fs/promises";
 
 const productRepository = AppDataSource.getRepository(Product);
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, price, stock, imageUrl } = req.body;
+    const { name, description, price, stock } = req.body;
 
     if (!name || !price || !stock) {
       return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    let imageUrl = null;
+
+    if (req.file) {
+      const upload = await cloudinary.uploader.upload(req.file.path, {
+        folder: "productos",
+      });
+
+      imageUrl = upload.secure_url;
+
+      await fs.unlink(req.file.path);
     }
 
     const newProduct = productRepository.create({
@@ -61,18 +75,28 @@ export const getProductById = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, price, stock, imageUrl } = req.body;
+    const { name, description, price, stock } = req.body;
 
     const product = await productRepository.findOneBy({ id: Number(id) });
+
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
+    }
+
+    if (req.file) {
+      const upload = await cloudinary.uploader.upload(req.file.path, {
+        folder: "productos",
+      });
+
+      product.imageUrl = upload.secure_url;
+
+      await fs.unlink(req.file.path);
     }
 
     product.name = name ?? product.name;
     product.description = description ?? product.description;
     product.price = price ?? product.price;
     product.stock = stock ?? product.stock;
-    product.imageUrl = imageUrl ?? product.imageUrl;
 
     await productRepository.save(product);
 
@@ -103,4 +127,3 @@ export const deleteProduct = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error al eliminar el producto" });
   }
 };
-
