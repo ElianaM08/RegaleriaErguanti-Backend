@@ -10,19 +10,23 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
   jwt.verify(token, process.env.JWT_SECRET!, (err, decoded) => {
     if (err) return res.status(401).json({ message: "Token inválido" });
 
-    (req as any).user = decoded;
+    const payload = decoded as { id: number; role: string };
+
+    req.user = {
+      id: payload.id,
+      role: payload.role,
+    };
+
     next();
   });
 };
 
 export const verifyAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const user = (req as any).user;
-
-  if (!user) {
+  if (!req.user) {
     return res.status(401).json({ message: "Usuario no autenticado" });
   }
 
-  if (user.role !== "admin") {
+  if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Acceso denegado: solo administradores" });
   }
 

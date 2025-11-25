@@ -13,7 +13,7 @@ export class StatisticController {
 
       const stats = await statisticRepo.findOne({
         where: { user: { id: Number(userId) } },
-        relations: ["user", "purchases"],
+        relations: ["user", "purchases", "purchases.product"],
       });
 
       if (!stats) {
@@ -22,10 +22,10 @@ export class StatisticController {
 
       return res.json(stats);
     } catch (error) {
-      return res.status(500).json({ error });
+      console.error(error);
+      return res.status(500).json({ message: "Error al obtener estadísticas" });
     }
   }
-
   static async createForUser(req: Request, res: Response) {
     try {
       const { userId } = req.body;
@@ -36,13 +36,28 @@ export class StatisticController {
       if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
 
       const statsRepo = AppDataSource.getRepository(Statistic);
-      const newStats = statsRepo.create({ user });
+
+      const existing = await statsRepo.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (existing) return res.json(existing);
+
+      const newStats = statsRepo.create({
+        user,
+        totalInvested: 0,
+        totalSold: 0,
+        totalProfit: 0,
+        totalTransactions: 0,
+      });
 
       await statsRepo.save(newStats);
 
       return res.json(newStats);
+
     } catch (error) {
-      return res.status(500).json({ error });
+      console.error(error);
+      return res.status(500).json({ message: "Error al crear estadísticas" });
     }
   }
 
@@ -63,7 +78,28 @@ export class StatisticController {
 
       return res.json(stats);
     } catch (error) {
-      return res.status(500).json({ error });
+      console.error(error);
+      return res.status(500).json({ message: "Error al actualizar estadísticas" });
+    }
+  }
+
+  static async getAll(req: Request, res: Response) {
+    try {
+      if (!req.user || req.user.role !== "admin") {
+        return res.status(403).json({ message: "Acceso denegado. Solo admin." });
+      }
+
+      const statsRepo = AppDataSource.getRepository(Statistic);
+
+      const allStats = await statsRepo.find({
+        relations: ["user", "purchases", "purchases.product"],
+      });
+
+      return res.json(allStats);
+
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Error al obtener estadísticas" });
     }
   }
 }

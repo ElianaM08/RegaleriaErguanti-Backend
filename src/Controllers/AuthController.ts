@@ -3,8 +3,9 @@ import { AppDataSource } from "../Config/Data-source";
 import { User } from "../Entities/User";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../Utils/Jwt";
-
+import { Statistic } from "../Entities/Statistic";
 const userRepo = AppDataSource.getRepository(User);
+const statsRepo = AppDataSource.getRepository(Statistic);
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -22,17 +23,27 @@ export const register = async (req: Request, res: Response) => {
     const userCount = await userRepo.count();
     const role = userCount === 0 ? "admin" : "user";
 
-    const newUser = userRepo.create({
-      name,
-      email,
-      password,
-    });
-
+    const newUser = userRepo.create({ name, email, password, role});
     await userRepo.save(newUser);
+    
+    const statRepo = AppDataSource.getRepository(Statistic);
+    const newStats = statRepo.create({
+      user: newUser,
+      totalInvested: 0,
+      totalSold: 0,
+      totalProfit: 0,
+      totalTransactions: 0,
+    });
+    await statRepo.save(newStats);
 
     res.status(201).json({
       message: `Usuario registrado correctamente como ${role}`,
-      user: { id: newUser.id, name: newUser.name, email: newUser.email, role },
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Error en el registro" });

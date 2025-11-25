@@ -12,7 +12,7 @@ const statisticRepository = AppDataSource.getRepository(Statistic);
 
 export const createPurchase = async (req: Request, res: Response) => {
   try {
-    const { userId, productId, statisticId, quantity, totalPrice } = req.body;
+    const { userId, productId, quantity, totalPrice } = req.body;
 
     if (!userId || !productId || !quantity || !totalPrice) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
@@ -20,29 +20,51 @@ export const createPurchase = async (req: Request, res: Response) => {
 
     const user = await userRepository.findOneBy({ id: userId });
     const product = await productRepository.findOneBy({ id: productId });
-    const statistic = statisticId
-      ? await statisticRepository.findOneBy({ id: statisticId })
-      : null;
 
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
     if (!product) return res.status(404).json({ message: "Producto no encontrado" });
 
+    let statistic = await statisticRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ["purchases"],
+    });
+
+    if (!statistic) {
+      statistic = statisticRepository.create({
+        user,
+        totalInvested: 0,
+        totalSold: 0,
+        totalProfit: 0,
+        totalTransactions: 0,
+      });
+
+      await statisticRepository.save(statistic);
+    }
+
     const newPurchase = purchaseRepository.create({
       user,
       product,
-      statistic: statistic || null,
+      statistic,
       quantity,
       totalPrice,
       actionType: "purchase",
     });
 
     const savedPurchase = await purchaseRepository.save(newPurchase);
+
+    statistic.totalInvested += Number(totalPrice);
+    statistic.totalTransactions += 1;
+
+    await statisticRepository.save(statistic);
+
     res.status(201).json(savedPurchase);
+
   } catch (error) {
     console.error("Error al crear la compra:", error);
     res.status(500).json({ message: "Error al crear la compra" });
   }
 };
+
 
 export const getPurchases = async (_req: Request, res: Response) => {
   try {
