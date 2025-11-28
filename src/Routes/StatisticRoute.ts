@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { StatisticController } from "../Controllers/StatisticController";
-import { verifyToken } from "../Middleware/AuthMiddleware";
-import { verifyAdmin} from "../Middleware/AuthMiddleware";
+import { verifyToken, verifyAdmin } from "../Middleware/AuthMiddleware";
+
 const router = Router();
 
-router.get("/all", verifyToken, verifyAdmin,StatisticController.getAll); 
-router.get("/user/:userId", verifyToken, StatisticController.getByUser);
-router.post("/", StatisticController.createForUser);
-router.put("/:id", StatisticController.update);
-
+router.get("/me", verifyToken,verifyAdmin, StatisticController.getMyStats); 
+router.get("/:userId", verifyToken, verifyAdmin,StatisticController.getByUser);
+router.post("/", verifyToken, verifyAdmin, StatisticController.createForUser);
+router.put("/:id", verifyToken,verifyAdmin, StatisticController.update);
+router.get("/", verifyToken, verifyAdmin, StatisticController.getAll);
 
 export default router;
+

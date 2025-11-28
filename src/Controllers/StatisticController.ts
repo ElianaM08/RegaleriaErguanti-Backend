@@ -102,4 +102,26 @@ export class StatisticController {
       return res.status(500).json({ message: "Error al obtener estadísticas" });
     }
   }
+  
+  static async getMyStats(req: Request, res: Response) {
+  try {
+    const userId = req.user!.id;
+
+    const stats = await AppDataSource.getRepository(Statistic).findOne({
+      where: { user: { id: userId } },
+      relations: ["user", "purchases", "purchases.product"],
+    });
+
+    if (!stats) {
+      return res.status(404).json({ message: "No se encontraron estadísticas" });
+    }
+
+    return res.json(stats);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error al obtener estadísticas del usuario" });
+  }
+}
+
 }
