@@ -103,25 +103,31 @@ export class StatisticController {
     }
   }
   
-  static async getMyStats(req: Request, res: Response) {
+static async getMyStats(req: Request, res: Response) {
   try {
-    const userId = req.user!.id;
+    const userId = req.user?.id;
 
-    const stats = await AppDataSource.getRepository(Statistic).findOne({
-      where: { user: { id: userId } },
+    if (!userId) {
+      return res.status(401).json({ message: "Usuario no autenticado" });
+    }
+
+    const statsRepo = AppDataSource.getRepository(Statistic);
+
+    const stats = await statsRepo.findOne({
+      where: { user: { id: Number(userId) } },
       relations: ["user", "purchases", "purchases.product"],
     });
 
     if (!stats) {
-      return res.status(404).json({ message: "No se encontraron estadísticas" });
+      return res.status(404).json({ message: "No se encontraron estadísticas para este usuario" });
     }
 
     return res.json(stats);
-
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error al obtener estadísticas del usuario" });
+    console.error("Error en getMyStats:", error);
+    return res.status(500).json({ message: "Error interno al obtener estadísticas" });
   }
 }
+
 
 }
